@@ -1,12 +1,26 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.css" integrity="sha256-Is0XNfNX8KF/70J2nv8Qe6BWyiXrtFxKfJBHoDgNAEM=" crossorigin="anonymous" />
 <style>
-body{ font-family: "Noto Sans"; }
+body{ font-family: "Noto Sans", sans-serif; }
 </style>
 <textarea id="editor"></textarea>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.js" integrity="sha256-6sZs7OGP0Uzcl7UDsLaNsy1K0KTZx1+6yEVrRJMn2IM=" crossorigin="anonymous"></script>
 <script>
 var simplemde = new SimpleMDE({ element: document.getElementById("editor") });
+var socket = new WebSocket("ws://" + location.host + "/ws" + location.pathname);
 simplemde.codemirror.on("change", function(instance, changeObj){
-  console.log(changeObj);
+  socket.send(JSON.stringify({
+    Line:    changeObj.from.line,
+    Ch:      changeObj.from.ch,
+    Added:   changeObj.text,
+    Removed: changeObj.removed
+  }));
+});
+socket.addEventListener('open', function(event) {
+  console.log("opened connection with server: ", event);
+});
+socket.addEventListener('message', function(msg) {
+  console.log("recv: ", msg.data);
+  var change = JSON.parse(msg.data);
 });
 </script>
+<link href="https://fonts.googleapis.com/css?family=Noto+Sans|Noto+Serif" rel="stylesheet">
