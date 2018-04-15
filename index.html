@@ -1,3 +1,12 @@
-<textarea>
-
-</textarea>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.css" integrity="sha256-Is0XNfNX8KF/70J2nv8Qe6BWyiXrtFxKfJBHoDgNAEM=" crossorigin="anonymous" />
+<style>
+body{ font-family: "Noto Sans"; }
+</style>
+<textarea id="editor"></textarea>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.js" integrity="sha256-6sZs7OGP0Uzcl7UDsLaNsy1K0KTZx1+6yEVrRJMn2IM=" crossorigin="anonymous"></script>
+<script>
+var simplemde = new SimpleMDE({ element: document.getElementById("editor") });
+simplemde.codemirror.on("change", function(instance, changeObj){
+  console.log(changeObj);
+});
+</script>
