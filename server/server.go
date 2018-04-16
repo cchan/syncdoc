@@ -14,6 +14,7 @@ import (
   "strings"
   //"errors"
   "github.com/cchan/operational-transformation/syncdoc"
+  "regexp"
 )
 
 // TODO:
@@ -30,6 +31,8 @@ var Documents = make(map[string]*syncdoc.Syncdoc)
 
 var upgrader = websocket.Upgrader{}
 
+var validDocName = regexp.MustCompile("^\\w+(/\\w+)*$")
+
 func edit(w http.ResponseWriter, r *http.Request) {
   c, err := upgrader.Upgrade(w, r, nil)
   if err != nil {
@@ -38,7 +41,10 @@ func edit(w http.ResponseWriter, r *http.Request) {
   }
   defer c.Close()
 
-  docname := strings.TrimPrefix(string(r.URL.Path), "/ws/")
+  if r.URL.Path[:4] != "/ws/" { http.Error(w, "Invalid document URL", http.StatusBadRequest); return }
+  docname := strings.TrimPrefix(r.URL.Path, "/ws/")
+
+  if ! validDocName.Match([]byte(docname)) { http.Error(w, "Invalid document URL", http.StatusBadRequest); return }
 
   if Documents[docname] == nil {
     Documents[docname] = syncdoc.NewDocument(docname)
@@ -61,6 +67,9 @@ func main() {
   if err != nil { log.Fatal("Could not open index.html for reading") }
 
   http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+    if r.URL.Path[:1] != "/" { http.Error(w, "Invalid document URL", http.StatusBadRequest); return }
+    docname := strings.TrimPrefix(r.URL.Path, "/")
+    if ! validDocName.Match([]byte(docname)) { http.Error(w, "Invalid document URL", http.StatusBadRequest); return }
     w.Header().Set("Content-Type", "text/html")
     w.Write(html)
   })
