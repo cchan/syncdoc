@@ -86,6 +86,10 @@ func edit(w http.ResponseWriter, r *http.Request) {
   doc.ConnectionsMutex.Unlock()
 
   recvEdits(doc, c)
+
+  doc.ConnectionsMutex.Lock()
+  doc.Connections = append(doc.Connections, c)
+  doc.ConnectionsMutex.Unlock()
 }
 
 func main() {
