@@ -25,25 +25,19 @@ type change struct {
 }
 
 type document struct {
-    History []change
+    History []*change
     HistoryMutex *sync.Mutex
     Connections []*websocket.Conn
     ConnectionsMutex *sync.Mutex
 }
 
-func sendEdit(c *websocket.Conn, messageType int, changeObj change) {
-  for {
-    stringified, err := json.Marshal(changeObj)
-    if err != nil {
-      log.Println("encode:", err)
-      continue
-    }
-
-    if c.WriteMessage(messageType, stringified) != nil {
-      log.Println("write:", err)
-      break
-    }
-  }
+func NewDocument() *document {
+    d := new(document)
+    d.History = make([]*change, 0)
+    d.HistoryMutex = &sync.Mutex{}
+    d.Connections = make([]*websocket.Conn, 0)
+    d.ConnectionsMutex =  &sync.Mutex{}
+    return d
 }
 
 func recvEdits(doc *document, c *websocket.Conn) {
@@ -54,21 +48,30 @@ func recvEdits(doc *document, c *websocket.Conn) {
       break
     }
 
+    log.Println("recv:", string(message))
+
     var changeObj change
-    if json.Unmarshal(message, &changeObj) != nil {
+    if err := json.Unmarshal(message, &changeObj); err != nil {
       log.Println("decode:", err)
       continue
     }
 
-    for _, conn := range doc.Connections {
-      if conn != c {
-        sendEdit(conn, messageType, changeObj)
+    for _, otherconn := range doc.Connections {
+      if otherconn != c {
+        stringified, err := json.Marshal(changeObj)
+        if err != nil {
+          log.Println("encode:", err)
+          continue
+        }
+        if err := otherconn.WriteMessage(messageType, stringified); err != nil {
+          log.Println("write:", err)
+          break
+        }
       }
     }
   }
 }
 
-// Each document maintains a list of connections.
 var Documents = make(map[string]*document)
 
 func edit(w http.ResponseWriter, r *http.Request) {
@@ -79,16 +82,28 @@ func edit(w http.ResponseWriter, r *http.Request) {
   }
   defer c.Close()
 
+  if Documents[r.URL.RawPath] == nil {
+    Documents[r.URL.RawPath] = NewDocument()
+  }
   doc := Documents[r.URL.RawPath]
 
   doc.ConnectionsMutex.Lock()
   doc.Connections = append(doc.Connections, c)
   doc.ConnectionsMutex.Unlock()
 
+  log.Println("Connected")
+
   recvEdits(doc, c)
 
+  log.Println("Disconnected")
+
   doc.ConnectionsMutex.Lock()
-  doc.Connections = append(doc.Connections, c)
+  for i := range doc.Connections {
+    if doc.Connections[i] == c {
+      doc.Connections = append(doc.Connections[:i], doc.Connections[i+1:]...)
+      break
+    }
+  }
   doc.ConnectionsMutex.Unlock()
 }
 
