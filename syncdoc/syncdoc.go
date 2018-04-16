@@ -7,23 +7,11 @@ import (
   "log"
 )
 
-type cursorpos struct {
-  Line    int32
-  Ch      int32
-}
-
-type Change struct {
-  From    cursorpos
-  To      cursorpos
-  Added   []string
-}
-
 type Syncdoc struct {
   Name string
-  History []Change
-  HistoryMutex *sync.Mutex
   Connections []*websocket.Conn
-  ConnectionsMutex *sync.Mutex
+  ConnectionsMutex sync.Mutex
+  CurrentState *docState
 }
 
 func (doc *Syncdoc) AddConnection(c *websocket.Conn) {
@@ -31,11 +19,7 @@ func (doc *Syncdoc) AddConnection(c *websocket.Conn) {
   doc.Connections = append(doc.Connections, c)
   doc.ConnectionsMutex.Unlock()
 
-  doc.HistoryMutex.Lock()
-  for i := range doc.History {
-    sendEdit(c, doc.History[i])
-  }
-  doc.HistoryMutex.Unlock()
+  sendEdit(c, doc.CurrentState.GetInitializingChange())
 }
 
 func (doc *Syncdoc) RemoveConnection(c *websocket.Conn) {
@@ -70,9 +54,7 @@ func (doc *Syncdoc) Listen(c *websocket.Conn) {
 }
 
 func (doc *Syncdoc) Apply(changeObj Change, currentconn *websocket.Conn){
-  doc.HistoryMutex.Lock()
-  doc.History = append(doc.History, changeObj)
-  doc.HistoryMutex.Unlock()
+  doc.CurrentState.Apply(changeObj)
 
   for _, otherconn := range doc.Connections {
     if otherconn != currentconn {
@@ -84,10 +66,7 @@ func (doc *Syncdoc) Apply(changeObj Change, currentconn *websocket.Conn){
 func NewDocument(name string) *Syncdoc {
   d := new(Syncdoc)
   d.Name = name
-  d.History = make([]Change, 0)
-  d.HistoryMutex = &sync.Mutex{}
-  d.Connections = make([]*websocket.Conn, 0)
-  d.ConnectionsMutex =  &sync.Mutex{}
+  d.CurrentState = newDocState(name)
   return d
 }
 
