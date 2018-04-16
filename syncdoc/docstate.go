@@ -32,7 +32,7 @@ func newDocState (pathname string) *docState {
 
 func (ds *docState) GetInitializingChange () Change {
   var chg Change
-  chg.Added = append([]string(nil), ds.Lines...)
+  chg.Added = ds.Lines
   return chg
 }
 
@@ -43,13 +43,17 @@ func (ds *docState) Apply (chg Change) {
 
   ds.LinesMutex.Lock()
 
-  newlines := append([]string(nil), chg.Added...)
-  newlines[0] = ds.Lines[chg.From.Line][:chg.From.Ch] + newlines[0]
-  newlines[len(newlines)-1] = newlines[len(newlines)-1] + ds.Lines[chg.To.Line][chg.To.Ch:]
+  insertprefix := ds.Lines[chg.From.Line][:chg.From.Ch]
+  insertpostfix := ds.Lines[chg.To.Line][chg.To.Ch:]
 
-  ds.Lines = append(append(ds.Lines[:chg.From.Line], newlines...), ds.Lines[chg.To.Line+1:]...)
+  newlines := []string{}
+  newlines = append(newlines, ds.Lines[:chg.From.Line]...)
+  newlines = append(newlines, chg.Added...)
+  newlines = append(newlines, ds.Lines[chg.To.Line+1:]...)
+  newlines[chg.From.Line] = insertprefix + newlines[chg.From.Line]
+  newlines[chg.From.Line + len(chg.Added) - 1] = newlines[chg.From.Line + len(chg.Added) - 1] + insertpostfix
+  ds.Lines = newlines
 
-  
   targetFile := "data/" + ds.Pathname + ".file"
   err := os.MkdirAll(filepath.Dir(targetFile), 0700)
   if err != nil { log.Printf("%v", err) }

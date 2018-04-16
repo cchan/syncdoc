@@ -18,8 +18,11 @@ import (
 )
 
 // TODO:
-// - separate this into neater files
-// - periodically dump History results to plaintext file, and use that as the base
+// x separate this into neater files
+// x ISSUE: when you newline above a line with content, that line gets cleared
+// - ISSUE: onconnect full-doc update duplicates the document if the client disconnects & reconnects; SOLUTION: have separate Edit and FullUpdate events
+// - ISSUE: bounds checks for change events before slicing
+// x periodically dump History results to plaintext file, and use that as the base
 //   - keep enough history (1000 entries?) that it can still merge any latecomers
 //   - full-file updates periodically (every 10s?)
 // - OT is pretty easy; to test it just give a setTimeout delay before js send edit to server

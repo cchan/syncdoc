@@ -2,8 +2,8 @@ package syncdoc
 
 
 type cursorpos struct {
-  Line    int32
-  Ch      int32
+  Line    int
+  Ch      int
 }
 
 type Change struct {
