@@ -17,27 +17,31 @@ import (
 
 var upgrader = websocket.Upgrader{}
 
+type cursorpos struct {
+  Line    int32
+  Ch      int32
+}
+
 type change struct {
-    Line    int32
-    Ch      int32
-    Added   []string
-    Removed []string
+  From    cursorpos
+  To      cursorpos
+  Added   []string
 }
 
 type document struct {
-    History []*change
-    HistoryMutex *sync.Mutex
-    Connections []*websocket.Conn
-    ConnectionsMutex *sync.Mutex
+  History []change
+  HistoryMutex *sync.Mutex
+  Connections []*websocket.Conn
+  ConnectionsMutex *sync.Mutex
 }
 
 func NewDocument() *document {
-    d := new(document)
-    d.History = make([]*change, 0)
-    d.HistoryMutex = &sync.Mutex{}
-    d.Connections = make([]*websocket.Conn, 0)
-    d.ConnectionsMutex =  &sync.Mutex{}
-    return d
+  d := new(document)
+  d.History = make([]change, 0)
+  d.HistoryMutex = &sync.Mutex{}
+  d.Connections = make([]*websocket.Conn, 0)
+  d.ConnectionsMutex =  &sync.Mutex{}
+  return d
 }
 
 func recvEdits(doc *document, c *websocket.Conn) {
@@ -55,6 +59,8 @@ func recvEdits(doc *document, c *websocket.Conn) {
       log.Println("decode:", err)
       continue
     }
+
+    log.Println("unmarshaled: %v", changeObj)
 
     for _, otherconn := range doc.Connections {
       if otherconn != c {

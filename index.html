@@ -8,12 +8,13 @@ body{ font-family: "Noto Sans", sans-serif; }
 var simplemde = new SimpleMDE({ element: document.getElementById("editor") });
 var socket = new WebSocket("ws://" + location.host + "/ws" + location.pathname);
 simplemde.codemirror.on("change", function(instance, changeObj){
-  socket.send(JSON.stringify({
-    Line:    changeObj.from.line,
-    Ch:      changeObj.from.ch,
-    Added:   changeObj.text,
-    Removed: changeObj.removed
-  }));
+  if(changeObj.origin != "remote"){
+    socket.send(JSON.stringify({
+      From:    changeObj.from,
+      To:      changeObj.to,
+      Added:   changeObj.text
+    }));
+  }
 });
 socket.addEventListener('open', function(event) {
   console.log("opened connection with server: ", event);
@@ -21,6 +22,12 @@ socket.addEventListener('open', function(event) {
 socket.addEventListener('message', function(msg) {
   console.log("recv: ", msg.data);
   var change = JSON.parse(msg.data);
+  simplemde.codemirror.replaceRange(
+    change.Added.join("\n"),
+    {line: change.From.Line, ch: change.From.Ch},
+    {line: change.To.Line, ch: change.To.Ch},
+    "remote"
+  );
 });
 </script>
 <link href="https://fonts.googleapis.com/css?family=Noto+Sans|Noto+Serif" rel="stylesheet">
