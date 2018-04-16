@@ -29,5 +29,9 @@ socket.addEventListener('message', function(msg) {
     "remote"
   );
 });
+socket.addEventListener('close', function(event) {
+  alert("disconnected");
+  window.location.reload();
+});
 </script>
 <link href="https://fonts.googleapis.com/css?family=Noto+Sans|Noto+Serif" rel="stylesheet">

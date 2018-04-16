@@ -13,9 +13,9 @@ import (
   "github.com/gorilla/websocket"
   "encoding/json"
   "sync"
+  "strings"
+  //"errors"
 )
-
-var upgrader = websocket.Upgrader{}
 
 type cursorpos struct {
   Line    int32
@@ -29,14 +29,16 @@ type change struct {
 }
 
 type document struct {
+  Name string
   History []change
   HistoryMutex *sync.Mutex
   Connections []*websocket.Conn
   ConnectionsMutex *sync.Mutex
 }
 
-func NewDocument() *document {
+func NewDocument(name string) *document {
   d := new(document)
+  d.Name = name
   d.History = make([]change, 0)
   d.HistoryMutex = &sync.Mutex{}
   d.Connections = make([]*websocket.Conn, 0)
@@ -44,15 +46,26 @@ func NewDocument() *document {
   return d
 }
 
+func sendEdit(c *websocket.Conn, changeObj change) error {
+  stringified, err := json.Marshal(changeObj)
+  if err != nil {
+    return err
+  }
+  if err := c.WriteMessage(websocket.TextMessage, stringified); err != nil {
+    return err
+  }
+  return nil
+}
+
 func recvEdits(doc *document, c *websocket.Conn) {
   for {
-    messageType, message, err := c.ReadMessage()
+    _, message, err := c.ReadMessage()
     if err != nil {
       log.Println("read:", err)
       break
     }
 
-    log.Println("recv:", string(message))
+    log.Printf("[%s] recv: %s\n", doc.Name, string(message))
 
     var changeObj change
     if err := json.Unmarshal(message, &changeObj); err != nil {
@@ -60,25 +73,22 @@ func recvEdits(doc *document, c *websocket.Conn) {
       continue
     }
 
-    log.Println("unmarshaled: %v", changeObj)
+    doc.HistoryMutex.Lock()
+    doc.History = append(doc.History, changeObj)
+    doc.HistoryMutex.Unlock()
 
     for _, otherconn := range doc.Connections {
       if otherconn != c {
-        stringified, err := json.Marshal(changeObj)
-        if err != nil {
-          log.Println("encode:", err)
-          continue
-        }
-        if err := otherconn.WriteMessage(messageType, stringified); err != nil {
-          log.Println("write:", err)
-          break
-        }
+        sendEdit(otherconn, changeObj)
       }
     }
   }
 }
 
 var Documents = make(map[string]*document)
+
+
+var upgrader = websocket.Upgrader{}
 
 func edit(w http.ResponseWriter, r *http.Request) {
   c, err := upgrader.Upgrade(w, r, nil)
@@ -88,14 +98,23 @@ func edit(w http.ResponseWriter, r *http.Request) {
   }
   defer c.Close()
 
-  if Documents[r.URL.RawPath] == nil {
-    Documents[r.URL.RawPath] = NewDocument()
+  docname := strings.TrimPrefix(string(r.URL.Path), "/ws/")
+  log.Println(docname)
+
+  if Documents[docname] == nil {
+    Documents[docname] = NewDocument(docname)
   }
-  doc := Documents[r.URL.RawPath]
+  doc := Documents[docname]
 
   doc.ConnectionsMutex.Lock()
   doc.Connections = append(doc.Connections, c)
   doc.ConnectionsMutex.Unlock()
+
+  doc.HistoryMutex.Lock()
+  for i := range doc.History {
+    sendEdit(c, doc.History[i])
+  }
+  doc.HistoryMutex.Unlock()
 
   log.Println("Connected")
 
