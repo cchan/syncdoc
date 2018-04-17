@@ -20,3 +20,4 @@ x periodically dump History results to plaintext file, and use that as the base
 - WSS LetsEncrypt - not just CloudFlare
 - Use a linkedlist for Document connections?
 - Add cursors for other users (cursorPosition events)
+- Integrate some changes from protobuf branch

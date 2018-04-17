@@ -37,7 +37,7 @@ func (doc *Syncdoc) Listen(c *websocket.Conn) {
   for {
     _, message, err := c.ReadMessage()
     if err != nil {
-      log.Println("read:", err)
+      //log.Println("read:", err)
       break
     }
 
