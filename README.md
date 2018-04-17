@@ -4,6 +4,25 @@ A collaborative editing tool written in Go by [Clive Chan](https://clive.io).
 
 Copyright (c) 2018, all rights reserved, for now.
 
+## Install
+
+Derived from [protobuf's instructions](https://developers.google.com/protocol-buffers/docs/gotutorial#compiling-your-protocol-buffers).
+
+Install protobuf
+```bash
+curl -OL https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip
+unzip protoc-3.2.0-linux-x86_64.zip -d protoc3
+sudo mv protoc3/bin/* /usr/local/bin/
+sudo mv protoc3/include/* /usr/local/include/
+```
+
+
+```
+export PATH=$GOPATH/bin:$PATH                  # Strongly recommend this
+go get github.com/gorilla/websocket
+go get github.com/golang/protobuf/protoc-gen-go
+```
+
 ## TODO
 
 x separate this into neater files

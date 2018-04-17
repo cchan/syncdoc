@@ -1,4 +1,4 @@
-package syncdoc
+package main
 
 import (
   "sync"

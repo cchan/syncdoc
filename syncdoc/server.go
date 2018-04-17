@@ -13,11 +13,10 @@ import (
   "github.com/gorilla/websocket"
   "strings"
   //"errors"
-  "github.com/cchan/operational-transformation/syncdoc"
   "regexp"
 )
 
-var Documents = make(map[string]*syncdoc.Syncdoc)
+var Documents = make(map[string]*Syncdoc)
 
 var upgrader = websocket.Upgrader{}
 
@@ -40,7 +39,7 @@ func edit(w http.ResponseWriter, r *http.Request) {
   if ! validDocName.Match([]byte(docname)) { invalidDocName(w); return }
 
   if Documents[docname] == nil {
-    Documents[docname] = syncdoc.NewDocument(docname)
+    Documents[docname] = NewDocument(docname)
   }
   doc := Documents[docname]
 

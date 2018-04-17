@@ -1,0 +1,30 @@
+syntax = "proto3";
+package main;
+
+message Change {
+  message CursorPosition {
+    int32 line = 1;
+    int32 ch = 2;
+  }
+  CursorPosition from = 1;
+  CursorPosition to = 2;
+  repeated string added = 3;
+}
+
+message ClientEditEvent {
+  int32 preSequenceNum = 1;
+  repeated Change changes = 2;
+}
+
+// Different ServerEditEvents can be sent to different clients. So this should work.
+message ServerEditEvent {
+  int32 postSequenceNum = 1;
+  repeated Change changes = 2;
+}
+
+message ClientFullUpdateRequest { }
+
+message ServerFullUpdateResponse {
+  int32 postSequenceNum = 1;
+  repeated string lines = 2;
+}
