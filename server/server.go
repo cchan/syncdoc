@@ -13,7 +13,7 @@ import (
   "github.com/gorilla/websocket"
   "strings"
   //"errors"
-  "github.com/cchan/operational-transformation/syncdoc"
+  "github.com/cchan/syncdoc/syncdoc"
   "regexp"
 )
 
