@@ -38,10 +38,9 @@ func (ds *docState) GetInitializingChange () Change {
 
 func (ds *docState) Apply (chg Change) {
   ds.HistoryMutex.Lock()
-  ds.History = append(ds.History, chg)
-  ds.HistoryMutex.Unlock()
-
   ds.LinesMutex.Lock()
+
+  ds.History = append(ds.History, chg)
 
   insertprefix := ds.Lines[chg.From.Line][:chg.From.Ch]
   insertpostfix := ds.Lines[chg.To.Line][chg.To.Ch:]
@@ -61,5 +60,6 @@ func (ds *docState) Apply (chg Change) {
   if err != nil { log.Printf("%v", err) }
   //log.Printf("write: plaintext for %s: %s", ds.Pathname, strings.Join(ds.Lines, "\n"))
 
+  ds.HistoryMutex.Unlock()
   ds.LinesMutex.Unlock()
 }
