@@ -111,4 +111,13 @@ Issues to Resolve
             - Leaves are up to 32 or 64 byte strings or something? Not sure what's optimal
         - Skip list has O(logn) range delete, O(logn) insert
             - O(nlogn) space
+        - Problem with linked data structures is that it's very difficult to commit to disk efficiently.
+            - I may just have to be clever and DIY mempage allocation
+            - Database needs to store ID => Document mapping. That's it.
+            - Maaaaybe it just stores the string? That could work fine tbh lol
+        - Another problem with any of these data structures is that they need to be pruned periodically.
+            - i.e. keeping the document in chunks of up to 1kb will gradually fragment smaller and smaller
+            - Perhaps during insertion and deletion steps, be clever about it
+                - i.e. when inserting, can copy to a new node, overwrite, modify links and lengths.
 - Which things need to be locked?
+    - mostly done
