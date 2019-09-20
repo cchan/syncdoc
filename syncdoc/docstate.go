@@ -7,6 +7,7 @@ import (
   "log"
   "os"
   "path/filepath"
+  "math"
 )
 
 type docState struct {
@@ -33,6 +34,10 @@ func newDocState (pathname string) *docState {
 func (ds *docState) GetInitializingChange () Change {
   var chg Change
   chg.Added = ds.Lines
+  chg.From.Line = 0
+  chg.From.Ch = 0
+  chg.To.Line = math.MaxInt32
+  chg.To.Ch = math.MaxInt32
   return chg
 }
 
@@ -40,8 +45,21 @@ func (ds *docState) Apply (chg Change) {
   ds.HistoryMutex.Lock()
   ds.LinesMutex.Lock()
 
+  if chg.To.Line > len(ds.Lines) { chg.To.Line = len(ds.Lines) }
+  if chg.From.Line < 0 { chg.From.Line = 0 }
+  if chg.To.Line < chg.From.Line { chg.From.Line = chg.To.Line }
+
+  if chg.From.Ch > len(ds.Lines[chg.From.Line]) { chg.From.Ch = len(ds.Lines[chg.From.Line]) }
+  if chg.From.Ch < 0 { chg.From.Ch = 0 }
+  if chg.To.Ch > len(ds.Lines[chg.To.Line]) { chg.To.Ch = len(ds.Lines[chg.To.Line]) }
+  if chg.To.Ch < 0 { chg.To.Ch = 0 }
+  if chg.From.Line == chg.To.Line {
+    if chg.To.Ch < chg.From.Ch { chg.To.Ch = chg.From.Ch }
+  }
+
   ds.History = append(ds.History, chg)
 
+  //log.Printf("%d:%d, %d:%d", chg.From.Line, chg.From.Ch, chg.To.Line, chg.To.Ch)
   insertprefix := ds.Lines[chg.From.Line][:chg.From.Ch]
   insertpostfix := ds.Lines[chg.To.Line][chg.To.Ch:]
 

@@ -2,25 +2,37 @@
 <html lang="en">
 <head>
   <title>SyncDoc</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.css" integrity="sha256-Is0XNfNX8KF/70J2nv8Qe6BWyiXrtFxKfJBHoDgNAEM=" crossorigin="anonymous" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/simplemde/1.11.2/simplemde.min.js" integrity="sha256-6sZs7OGP0Uzcl7UDsLaNsy1K0KTZx1+6yEVrRJMn2IM=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/incremental-dom@0.6.0/dist/incremental-dom-min.js" integrity="sha256-eFaLoHEO2TEWLaarkYZ+cCZUg4/YzG6UKcO4WtVmA1g=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@10.0.0/dist/markdown-it.min.js" integrity="sha256-YASERpEeN8gRNr/Fy4Km34WGFqIq1h6HkJMAQnVHlhk=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it-incremental-dom@2.1.0/dist/markdown-it-incremental-dom.min.js" integrity="sha256-FuDfxLTHdeTeiW/gBuC3s6xLAIDlX0fWmNnZpnIcTQo=" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/codemirror.min.js" integrity="sha256-dPTL2a+npIonoK5i0Tyes0txCMUWZBf8cfKRfACRotc=" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/codemirror.min.css" integrity="sha256-vZ3SaLOjnKO/gGvcUWegySoDU6ff33CS5i9ot8J9Czk=" crossorigin="anonymous" />
   <style>
-    body{ font-family: "Noto Sans", sans-serif; }
+    body{ font-family: "Noto Sans", sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; }
+    #status{ flex: 10%; }
+    #wrapper{ display: flex; flex: 90%; height: 100%; }
+    .CodeMirror, #target{ flex: 50%; }
   </style>
 </head>
 <body>
-  Welcome to SyncDoc! This is a collaborative editing tool written in Go by <a href="https://clive.io">Clive Chan</a>. <span id="connstatus" style="color: gray; font-weight: bold;">Loading...</span>
-  <textarea id="editor"></textarea>
+  <div id="status">Welcome to SyncDoc! This is a collaborative editing tool written in Go by <a href="https://clive.io">Clive Chan</a>. <span id="connstatus" style="color: gray; font-weight: bold;">Loading...</span></div>
+  <div id="wrapper">
+    <textarea id="editor"></textarea>
+    <div id="target"></div>
+  </div>
   <script>
-  var simplemde = new SimpleMDE({ element: document.getElementById("editor") });
+  const md = markdownit().use(markdownitIncrementalDOM);
+  var cm = CodeMirror.fromTextArea(document.getElementById("editor"), {
+    lineNumbers: true
+  });
   function status(text, color){
     document.getElementById("connstatus").innerHTML = text;
     document.getElementById("connstatus").style.color = color;
   }
   function establishConnection(){
     status("Connecting...", "goldenrod");
-    var socket = new WebSocket("wss://" + location.host + "/ws" + location.pathname);
-    simplemde.codemirror.on("change", function(instance, changeObj){
+    var socket = new WebSocket("ws://" + location.host + "/ws" + location.pathname);
+    cm.on("change", function(instance, changeObj){
       if(changeObj.origin != "remote"){
         socket.send(JSON.stringify({
           From:    changeObj.from,
@@ -28,6 +40,10 @@
           Added:   changeObj.text
         }));
       }
+      IncrementalDOM.patch(
+        document.getElementById('target'),
+        md.renderToIncrementalDOM(instance.getValue())
+      );
     });
     socket.addEventListener('open', function(event) {
       console.log("opened connection with server: ", event);
@@ -36,7 +52,7 @@
     socket.addEventListener('message', function(msg) {
       console.log("recv: ", msg.data);
       var change = JSON.parse(msg.data);
-      simplemde.codemirror.replaceRange(
+      cm.replaceRange(
         change.Added.join("\n"),
         {line: change.From.Line, ch: change.From.Ch},
         {line: change.To.Line, ch: change.To.Ch},

@@ -56,17 +56,19 @@ func main() {
     port = "8080"
   }
 
-  indexhtml, err := ioutil.ReadFile("static/index.html")
-  if err != nil { log.Fatal("Could not open index.html for reading") }
-  apphtml, err := ioutil.ReadFile("static/app.html")
-  if err != nil { log.Fatal("Could not open app.html for reading") }
-
   http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "text/html")
-    if r.URL.Path == "/" { w.Write(indexhtml); return }
+    if r.URL.Path == "/" {
+      indexhtml, err := ioutil.ReadFile("static/index.html")
+      if err != nil { log.Fatal("Could not open index.html for reading") }
+      w.Write(indexhtml);
+      return
+    }
     if r.URL.Path[:1] != "/" { invalidDocName(w); return }
     docname := strings.TrimPrefix(r.URL.Path, "/")
     if ! validDocName.Match([]byte(docname)) { invalidDocName(w); return }
+    apphtml, err := ioutil.ReadFile("static/app.html")
+    if err != nil { log.Fatal("Could not open app.html for reading") }
     w.Write(apphtml)
   })
 
