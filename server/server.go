@@ -14,10 +14,11 @@ import (
   "strings"
   //"errors"
   "github.com/cchan/syncdoc/syncdoc"
+  "github.com/gobwas/ws"
   "regexp"
 )
 
-var Documents = make(map[string]*syncdoc.Syncdoc)
+var documents = make(map[string]*syncdoc.Syncdoc)
 
 var upgrader = websocket.Upgrader{}
 
@@ -27,7 +28,7 @@ func invalidDocName(w http.ResponseWriter) {
 }
 
 func edit(w http.ResponseWriter, r *http.Request) {
-  c, err := upgrader.Upgrade(w, r, nil)
+  c, _, _, err := ws.UpgradeHTTP(r, w)
   if err != nil {
     log.Print("upgrade:", err)
     return
@@ -39,15 +40,13 @@ func edit(w http.ResponseWriter, r *http.Request) {
 
   if ! validDocName.Match([]byte(docname)) { invalidDocName(w); return }
 
-  if Documents[docname] == nil {
-    Documents[docname] = syncdoc.NewDocument(docname)
+  if documents[docname] == nil {
+    documents[docname] = syncdoc.NewDocument(docname)
   }
-  doc := Documents[docname]
+  doc := documents[docname]
 
-  doc.AddConnection(c)
   defer doc.RemoveConnection(c)
-
-  doc.Listen(c)
+  doc.AddAndListen(c)
 }
 
 func main() {

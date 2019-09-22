@@ -35,8 +35,8 @@
     cm.on("change", function(instance, changeObj){
       if(changeObj.origin != "remote"){
         socket.send(JSON.stringify({
-          From:    changeObj.from,
-          To:      changeObj.to,
+          From:    {Line: changeObj.from.line, Ch: changeObj.from.ch},
+          To:      {Line: changeObj.to.line, Ch: changeObj.to.ch},
           Added:   changeObj.text
         }));
       }
