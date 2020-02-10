@@ -5,7 +5,6 @@
 package main
 
 import (
-  "io/ioutil"
   "net/http"
   "log"
   "strconv"
@@ -23,9 +22,6 @@ var documents = make(map[string]*syncdoc.Syncdoc)
 var upgrader = websocket.Upgrader{}
 
 var validDocName = regexp.MustCompile("^[a-zA-Z0-9\\_\\-]+$")
-func invalidDocName(w http.ResponseWriter) {
-  http.Error(w, "Invalid document URL - can only contain alphanumeric + underscore.", http.StatusBadRequest)
-}
 
 func edit(w http.ResponseWriter, r *http.Request) {
   c, _, _, err := ws.UpgradeHTTP(r, w)
@@ -35,10 +31,9 @@ func edit(w http.ResponseWriter, r *http.Request) {
   }
   defer c.Close()
 
-  if r.URL.Path[:4] != "/ws/" { invalidDocName(w); return }
-  docname := strings.TrimPrefix(r.URL.Path, "/ws/")
-
-  if ! validDocName.Match([]byte(docname)) { invalidDocName(w); return }
+  if len(r.URL.Path) < 2 || r.URL.Path[0] != '/' { return }
+  docname := strings.TrimPrefix(r.URL.Path, "/")
+  if ! validDocName.Match([]byte(docname)) { return }
 
   if documents[docname] == nil {
     documents[docname] = syncdoc.NewDocument(docname)
@@ -55,8 +50,6 @@ func main() {
     port = "8080"
   }
 
-  http.HandleFunc("/ws/", edit);
-
   log.Printf("Listening on 127.0.0.1:" + port)
-  log.Fatal(http.ListenAndServe(":" + port, nil))
+  log.Fatal(http.ListenAndServe(":" + port, http.HandlerFunc(edit)))
 }

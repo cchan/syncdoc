@@ -25,7 +25,7 @@ server {
     }
 
     location /ws/ {
-        proxy_pass http://syncdoc_clive_io_upstream;
+        proxy_pass http://syncdoc_clive_io_upstream/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "Upgrade";
