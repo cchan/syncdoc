@@ -9,7 +9,6 @@ import (
   "log"
   "strconv"
   "os"
-  "github.com/gorilla/websocket"
   "strings"
   //"errors"
   "github.com/cchan/syncdoc/syncdoc"
@@ -18,15 +17,14 @@ import (
 )
 
 var documents = make(map[string]*syncdoc.Syncdoc)
-
-var upgrader = websocket.Upgrader{}
+// TODO: ADD RWMUTEX HERE - map is not concurrent write safe! but is read safe.
 
 var validDocName = regexp.MustCompile("^[a-zA-Z0-9\\_\\-]+$")
 
 func edit(w http.ResponseWriter, r *http.Request) {
   c, _, _, err := ws.UpgradeHTTP(r, w)
   if err != nil {
-    log.Print("upgrade:", err)
+    log.Println("upgrade:", err)
     return
   }
   defer c.Close()
@@ -50,6 +48,6 @@ func main() {
     port = "8080"
   }
 
-  log.Printf("Listening on 127.0.0.1:" + port)
+  log.Printf("Listening on 127.0.0.1:" + port + "\n")
   log.Fatal(http.ListenAndServe(":" + port, http.HandlerFunc(edit)))
 }
