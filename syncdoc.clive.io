@@ -3,8 +3,6 @@ upstream syncdoc_clive_io_upstream {
   keepalive 8; # will this prevent more than 8 users simultaneously?
 }
 
-proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=my_cache:10m max_size=3000m inactive=600m;
-
 server {
     listen 443 http2 ssl;
     listen [::]:443 http2 ssl;
@@ -14,8 +12,16 @@ server {
 
     sendfile on;
 
-    location / {
-        try_files $uri /app.html;
+    location = / {
+    }
+
+    location ~ ^/[a-zA-Z0-9\-\_]+$ {
+        try_files /app.html /app.html;
+    }
+
+    error_page 404 /404.html;
+    location = /404.html {
+        internal;
     }
 
     location /ws/ {

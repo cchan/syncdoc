@@ -22,7 +22,7 @@ var documents = make(map[string]*syncdoc.Syncdoc)
 
 var upgrader = websocket.Upgrader{}
 
-var validDocName = regexp.MustCompile("^[a-zA-Z\\_\\-]+$")
+var validDocName = regexp.MustCompile("^[a-zA-Z0-9\\_\\-]+$")
 func invalidDocName(w http.ResponseWriter) {
   http.Error(w, "Invalid document URL - can only contain alphanumeric + underscore.", http.StatusBadRequest)
 }
