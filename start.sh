@@ -1,1 +1,1 @@
-PORT=9041 pm2 start go --name syncdoc.clive.io -- run server/server.go
+PORT=3001 nohup go run server/server.go &

@@ -49,5 +49,5 @@ func main() {
   }
 
   log.Printf("Listening on 127.0.0.1:" + port + "\n")
-  log.Fatal(http.ListenAndServe(":" + port, http.HandlerFunc(edit)))
+  log.Fatal(http.ListenAndServe("127.0.0.1:" + port, http.HandlerFunc(edit)))
 }
