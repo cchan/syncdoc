@@ -21,7 +21,7 @@ type docState struct {
 func newDocState (pathname string) *docState {
   ds := new(docState)
   ds.Pathname = pathname
-  plaintext, err := ioutil.ReadFile("data/" + pathname + ".file") //TODO: SANITATION, CONFIGURABLE PATH
+  plaintext, err := ioutil.ReadFile("/home/www/data/" + pathname + ".file") //TODO: SANITATION, CONFIGURABLE PATH
   //log.Printf("read: plaintext for %s: %s", pathname, string(plaintext))
   if err == nil {
     ds.Lines = strings.Split(string(plaintext), "\n")
@@ -71,7 +71,7 @@ func (ds *docState) Apply (chg Change) {
   newlines[chg.From.Line + len(chg.Added) - 1] = newlines[chg.From.Line + len(chg.Added) - 1] + insertpostfix
   ds.Lines = newlines
 
-  targetFile := "data/" + ds.Pathname + ".file"
+  targetFile := "/home/www/data/" + ds.Pathname + ".file"
   err := os.MkdirAll(filepath.Dir(targetFile), 0700)
   if err != nil { log.Printf("%v", err) }
   err = ioutil.WriteFile(targetFile, []byte(strings.Join(ds.Lines, "\n")), 0644)
