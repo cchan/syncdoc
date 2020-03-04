@@ -5,12 +5,10 @@
 package main
 
 import (
-  "io/ioutil"
   "net/http"
   "log"
   "strconv"
   "os"
-  "github.com/gorilla/websocket"
   "strings"
   //"errors"
   "github.com/cchan/syncdoc/syncdoc"
@@ -19,26 +17,21 @@ import (
 )
 
 var documents = make(map[string]*syncdoc.Syncdoc)
+// TODO: ADD RWMUTEX HERE - map is not concurrent write safe! but is read safe.
 
-var upgrader = websocket.Upgrader{}
-
-var validDocName = regexp.MustCompile("^[a-zA-Z\\_\\-]+$")
-func invalidDocName(w http.ResponseWriter) {
-  http.Error(w, "Invalid document URL - can only contain alphanumeric + underscore.", http.StatusBadRequest)
-}
+var validDocName = regexp.MustCompile("^[a-zA-Z0-9\\_\\-]+$")
 
 func edit(w http.ResponseWriter, r *http.Request) {
   c, _, _, err := ws.UpgradeHTTP(r, w)
   if err != nil {
-    log.Print("upgrade:", err)
+    log.Println("upgrade:", err)
     return
   }
   defer c.Close()
 
-  if r.URL.Path[:4] != "/ws/" { invalidDocName(w); return }
-  docname := strings.TrimPrefix(r.URL.Path, "/ws/")
-
-  if ! validDocName.Match([]byte(docname)) { invalidDocName(w); return }
+  if len(r.URL.Path) < 2 || r.URL.Path[0] != '/' { return }
+  docname := strings.TrimPrefix(r.URL.Path, "/")
+  if ! validDocName.Match([]byte(docname)) { return }
 
   if documents[docname] == nil {
     documents[docname] = syncdoc.NewDocument(docname)
@@ -55,24 +48,6 @@ func main() {
     port = "8080"
   }
 
-  http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Content-Type", "text/html")
-    if r.URL.Path == "/" {
-      indexhtml, err := ioutil.ReadFile("static/index.html")
-      if err != nil { log.Fatal("Could not open index.html for reading") }
-      w.Write(indexhtml);
-      return
-    }
-    if r.URL.Path[:1] != "/" { invalidDocName(w); return }
-    docname := strings.TrimPrefix(r.URL.Path, "/")
-    if ! validDocName.Match([]byte(docname)) { invalidDocName(w); return }
-    apphtml, err := ioutil.ReadFile("static/app.html")
-    if err != nil { log.Fatal("Could not open app.html for reading") }
-    w.Write(apphtml)
-  })
-
-  http.HandleFunc("/ws/", edit);
-
-  log.Printf("Listening on 127.0.0.1:" + port)
-  log.Fatal(http.ListenAndServe(":" + port, nil))
+  log.Printf("Listening on 127.0.0.1:" + port + "\n")
+  log.Fatal(http.ListenAndServe("127.0.0.1:" + port, http.HandlerFunc(edit)))
 }

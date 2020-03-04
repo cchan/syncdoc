@@ -57,7 +57,7 @@
   }
   function establishConnection(){
     status("Connecting...", "goldenrod");
-    var socket = new WebSocket("ws://" + location.host + "/ws" + location.pathname);
+    var socket = new WebSocket("wss://" + location.host + "/ws" + location.pathname);
     cm.on("change", function(instance, changeObj){
       if(changeObj.origin != "remote"){
         socket.send(JSON.stringify({
