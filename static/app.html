@@ -6,24 +6,50 @@
   <script src="https://cdn.jsdelivr.net/npm/markdown-it@10.0.0/dist/markdown-it.min.js" integrity="sha256-YASERpEeN8gRNr/Fy4Km34WGFqIq1h6HkJMAQnVHlhk=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/markdown-it-incremental-dom@2.1.0/dist/markdown-it-incremental-dom.min.js" integrity="sha256-FuDfxLTHdeTeiW/gBuC3s6xLAIDlX0fWmNnZpnIcTQo=" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/codemirror.min.js" integrity="sha256-dPTL2a+npIonoK5i0Tyes0txCMUWZBf8cfKRfACRotc=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha256-F/Xda58SPdcUCr+xhSGz9MA2zQBPb0ASEYKohl8UCHc=" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/codemirror.min.css" integrity="sha256-vZ3SaLOjnKO/gGvcUWegySoDU6ff33CS5i9ot8J9Czk=" crossorigin="anonymous" />
   <style>
+    html, body{ height: 100%; }
     body{ font-family: "Noto Sans", sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; }
-    #status{ flex: 10%; }
-    #wrapper{ display: flex; flex: 90%; height: 100%; }
-    .CodeMirror, #target{ flex: 50%; }
+    #wrapper{ height: 100%; overflow: hidden; }
+    .CodeMirror, #target{ height: 100%; width: 49.5%; }
+    .CodeMirror{ float: left; font-size: 14pt; }
+    #target{ float: right; word-wrap: break-word; font-size: 14pt; overflow-y: scroll; }
+    #dragbar{ cursor: col-resize; background-color: #ccc; color: #666; width: 1%; height: 100%; line-height: 100%; display: inline-block; float: left;
+  display: flex;
+  justify-content: center;
+  align-items: center; }
   </style>
 </head>
 <body>
   <div id="status">Welcome to SyncDoc! This is a collaborative editing tool written in Go by <a href="https://clive.io">Clive Chan</a>. <span id="connstatus" style="color: gray; font-weight: bold;">Loading...</span></div>
   <div id="wrapper">
     <textarea id="editor"></textarea>
+    <div id="dragbar">&#10486;</div>
     <div id="target"></div>
   </div>
   <script>
+  var dragging = false;
+  dragstart = 
+  document.getElementById("dragbar").onmousedown = function(e) { dragging = true; };
+  document.getElementById("dragbar").onmouseup = function(e) { dragging = false; };
+  document.onmousemove = function(e) { if(dragging) {
+    var pct = (100*e.clientX/Math.max(
+      document.body.scrollWidth,
+      document.documentElement.scrollWidth,
+      document.body.offsetWidth,
+      document.documentElement.offsetWidth,
+      document.documentElement.clientWidth
+    ));
+    if (pct < 5) pct = 5;
+    if (pct > 95) pct = 95;
+    document.getElementsByClassName("CodeMirror")[0].style.width = (pct-0.5) + "%";
+    document.getElementById("target").style.width = (100-pct-0.5) + "%";
+  } };
   const md = markdownit().use(markdownitIncrementalDOM);
   var cm = CodeMirror.fromTextArea(document.getElementById("editor"), {
-    lineNumbers: true
+    lineNumbers: true,
+    lineWrapping: true
   });
   function status(text, color){
     document.getElementById("connstatus").innerHTML = text;
@@ -51,6 +77,7 @@
     });
     socket.addEventListener('message', function(msg) {
       console.log("recv: ", msg.data);
+      var versionedchange = JSON.parse(msg.data)
       var change = JSON.parse(msg.data);
       cm.replaceRange(
         change.Added.join("\n"),
