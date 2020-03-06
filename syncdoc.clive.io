@@ -12,19 +12,7 @@ server {
 
     sendfile on;
 
-    location = / {
-    }
-
-    location ~ ^/[a-zA-Z0-9\-\_]+$ {
-        try_files /app.html /app.html;
-    }
-
-    error_page 404 /404.html;
-    location = /404.html {
-        internal;
-    }
-
-    location /ws/ {
+    location / {
         proxy_pass http://syncdoc_clive_io_upstream/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;

@@ -14,6 +14,8 @@ import (
   "github.com/cchan/syncdoc/syncdoc"
   "github.com/gobwas/ws"
   "regexp"
+  "html"
+  "github.com/valyala/fasttemplate"
 )
 
 var documents = make(map[string]*syncdoc.Syncdoc)
@@ -21,7 +23,22 @@ var documents = make(map[string]*syncdoc.Syncdoc)
 
 var validDocName = regexp.MustCompile("^[a-zA-Z0-9\\_\\-]+$")
 
+var appTemplateContent, err = ioutil.ReadFile("/home/www/go/src/github.com/cchan/syncdoc/static/app.html")
+if err != nil { panic(err) }
+var appTemplate = fasttemplate.New(appTemplateContent, "{", "}")
+
 func edit(w http.ResponseWriter, r *http.Request) {
+  if len(r.URL.Path) < 4 || r.URL.Path[:4] != "/ws/" {
+    docname := r.URL.Path[1:]
+    if ! validDocName.Match([]byte(docname)) { return }
+    plaintext, err := ioutil.ReadFile("/home/www/data/" + pathname + ".file")
+    if err != nil { plaintext = "" }
+    appTemplate.Execute(w, html.EscapeString(plaintext), map[string]interface{}{
+      "content": plaintext
+    })
+    return
+  }
+
   c, _, _, err := ws.UpgradeHTTP(r, w)
   if err != nil {
     log.Println("upgrade:", err)
@@ -29,8 +46,7 @@ func edit(w http.ResponseWriter, r *http.Request) {
   }
   defer c.Close()
 
-  if len(r.URL.Path) < 2 || r.URL.Path[0] != '/' { return }
-  docname := strings.TrimPrefix(r.URL.Path, "/")
+  docname := r.URL.Path[4:]
   if ! validDocName.Match([]byte(docname)) { return }
 
   if documents[docname] == nil {
