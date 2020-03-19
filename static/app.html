@@ -21,6 +21,7 @@
       #wrapper>#target { display: block; float: none; width: 100%; }
       html,body,#wrapper,#target{ height: initial; overflow: initial; }
     }
+    #editor { display: none; }
   </style>
 </head>
 <body>
@@ -36,7 +37,7 @@
     lineWrapping: true
   });
   const md = markdownit().use(markdownitIncrementalDOM);
-  document.getElementById('target').innerHTML = md.render(cm.getValue());
+  document.getElementById('target').innerHTML = md.render(document.getElementById("editor").value);
 
   function status(text, color){
     document.getElementById("connstatus").innerHTML = text;
