@@ -9,8 +9,7 @@ import (
   "log"
   "strconv"
   "os"
-  "strings"
-  //"errors"
+  "io/ioutil"
   "github.com/cchan/syncdoc/syncdoc"
   "github.com/gobwas/ws"
   "regexp"
@@ -23,18 +22,16 @@ var documents = make(map[string]*syncdoc.Syncdoc)
 
 var validDocName = regexp.MustCompile("^[a-zA-Z0-9\\_\\-]+$")
 
-var appTemplateContent, err = ioutil.ReadFile("/home/www/go/src/github.com/cchan/syncdoc/static/app.html")
-if err != nil { panic(err) }
-var appTemplate = fasttemplate.New(appTemplateContent, "{", "}")
+var appTemplate *fasttemplate.Template
 
 func edit(w http.ResponseWriter, r *http.Request) {
   if len(r.URL.Path) < 4 || r.URL.Path[:4] != "/ws/" {
     docname := r.URL.Path[1:]
     if ! validDocName.Match([]byte(docname)) { return }
-    plaintext, err := ioutil.ReadFile("/home/www/data/" + pathname + ".file")
-    if err != nil { plaintext = "" }
-    appTemplate.Execute(w, html.EscapeString(plaintext), map[string]interface{}{
-      "content": plaintext
+    plaintext, err := ioutil.ReadFile("/home/www/data/" + docname + ".file")
+    if err != nil { plaintext = []byte{} }
+    _, err = appTemplate.Execute(w, map[string]interface{}{
+      "content": html.EscapeString(string(plaintext)),
     })
     return
   }
@@ -63,6 +60,10 @@ func main() {
   if _, err := strconv.ParseInt(port, 10, 16); err != nil {
     port = "8080"
   }
+
+  appTemplateContent, err := ioutil.ReadFile("/home/www/go/src/github.com/cchan/syncdoc/static/app.html")
+  if err != nil { panic(err) }
+  appTemplate = fasttemplate.New(string(appTemplateContent), "[[[", "]]]")
 
   log.Printf("Listening on 127.0.0.1:" + port + "\n")
   log.Fatal(http.ListenAndServe("127.0.0.1:" + port, http.HandlerFunc(edit)))

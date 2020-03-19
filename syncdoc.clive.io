@@ -3,6 +3,11 @@ upstream syncdoc_clive_io_upstream {
   keepalive 8; # will this prevent more than 8 users simultaneously?
 }
 
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    '' close;
+}
+
 server {
     listen 443 http2 ssl;
     listen [::]:443 http2 ssl;
@@ -12,11 +17,16 @@ server {
 
     sendfile on;
 
-    location / {
-        proxy_pass http://syncdoc_clive_io_upstream/;
+    location /ws/ {
+        proxy_pass http://syncdoc_clive_io_upstream/ws/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+    }
+
+    location / {
+        proxy_pass http://syncdoc_clive_io_upstream/;
     }
 
     #client_max_body_size 100k; # or does this interfere with long ws sessions?

@@ -24,13 +24,23 @@
 <body>
   <div id="status">Welcome to SyncDoc! This is a collaborative editing tool written in Go by <a href="https://clive.io">Clive Chan</a>. <span id="connstatus" style="color: gray; font-weight: bold;">Loading...</span></div>
   <div id="wrapper">
-    <textarea id="editor">{content}</textarea>
+    <textarea id="editor">[[[content]]]</textarea>
     <div id="dragbar">&#10486;</div>
     <div id="target"></div>
   </div>
   <script>
+  var cm = CodeMirror.fromTextArea(document.getElementById("editor"), {
+    lineNumbers: true,
+    lineWrapping: true
+  });
+  const md = markdownit().use(markdownitIncrementalDOM);
+  document.getElementById('target').innerHTML = md.render(cm.getValue());
+
+  function status(text, color){
+    document.getElementById("connstatus").innerHTML = text;
+    document.getElementById("connstatus").style.color = color;
+  }
   var dragging = false;
-  dragstart = 
   document.getElementById("dragbar").onmousedown = function(e) { dragging = true; };
   document.getElementById("dragbar").onmouseup = function(e) { dragging = false; };
   document.onmousemove = function(e) { if(dragging) {
@@ -46,15 +56,6 @@
     document.getElementsByClassName("CodeMirror")[0].style.width = (pct-0.5) + "%";
     document.getElementById("target").style.width = (100-pct-0.5) + "%";
   } };
-  const md = markdownit().use(markdownitIncrementalDOM);
-  var cm = CodeMirror.fromTextArea(document.getElementById("editor"), {
-    lineNumbers: true,
-    lineWrapping: true
-  });
-  function status(text, color){
-    document.getElementById("connstatus").innerHTML = text;
-    document.getElementById("connstatus").style.color = color;
-  }
   function establishConnection(){
     status("Connecting...", "goldenrod");
     var socket = new WebSocket("wss://" + location.host + "/ws" + location.pathname);
