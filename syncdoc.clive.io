@@ -13,9 +13,15 @@ server {
     listen [::]:443 http2 ssl;
 
     server_name syncdoc.clive.io;
-    root /home/clive/code/syncdoc/static;
 
     sendfile on;
+
+    root /home/clive/code/syncdoc/static;
+
+    location = / {
+    }
+    location /static/ {
+    }
 
     location /ws/ {
         proxy_pass http://syncdoc_clive_io_upstream/ws/;
@@ -25,8 +31,8 @@ server {
         proxy_set_header Host $host;
     }
 
-    location / {
-        proxy_pass http://syncdoc_clive_io_upstream/;
+    location ~ ^/[a-zA-Z0-9\_\-]+$ {
+        proxy_pass http://syncdoc_clive_io_upstream;
     }
 
     #client_max_body_size 100k; # or does this interfere with long ws sessions?

@@ -2,11 +2,8 @@
 <html lang="en">
 <head>
   <title>SyncDoc</title>
-  <script src="https://cdn.jsdelivr.net/npm/incremental-dom@0.6.0/dist/incremental-dom-min.js" integrity="sha256-eFaLoHEO2TEWLaarkYZ+cCZUg4/YzG6UKcO4WtVmA1g=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/markdown-it@10.0.0/dist/markdown-it.min.js" integrity="sha256-YASERpEeN8gRNr/Fy4Km34WGFqIq1h6HkJMAQnVHlhk=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/markdown-it-incremental-dom@2.1.0/dist/markdown-it-incremental-dom.min.js" integrity="sha256-FuDfxLTHdeTeiW/gBuC3s6xLAIDlX0fWmNnZpnIcTQo=" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/codemirror.min.js" integrity="sha256-dPTL2a+npIonoK5i0Tyes0txCMUWZBf8cfKRfACRotc=" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha256-F/Xda58SPdcUCr+xhSGz9MA2zQBPb0ASEYKohl8UCHc=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it@10.0.0/dist/markdown-it.min.js" integrity="sha256-YASERpEeN8gRNr/Fy4Km34WGFqIq1h6HkJMAQnVHlhk=" crossorigin="anonymous"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/codemirror.min.css" integrity="sha256-vZ3SaLOjnKO/gGvcUWegySoDU6ff33CS5i9ot8J9Czk=" crossorigin="anonymous" />
   <style>
     html, body{ height: 100%; }
@@ -36,9 +33,19 @@
     lineNumbers: true,
     lineWrapping: true
   });
-  const md = markdownit().use(markdownitIncrementalDOM);
+  var md = markdownit();
   document.getElementById('target').innerHTML = md.render(document.getElementById("editor").value);
+  </script>
 
+  <script src="https://cdn.jsdelivr.net/npm/incremental-dom@0.6.0/dist/incremental-dom-min.js" integrity="sha256-eFaLoHEO2TEWLaarkYZ+cCZUg4/YzG6UKcO4WtVmA1g=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/markdown-it-incremental-dom@2.1.0/dist/markdown-it-incremental-dom.min.js" integrity="sha256-FuDfxLTHdeTeiW/gBuC3s6xLAIDlX0fWmNnZpnIcTQo=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha256-F/Xda58SPdcUCr+xhSGz9MA2zQBPb0ASEYKohl8UCHc=" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha256-V8SV2MO1FUb63Bwht5Wx9x6PVHNa02gv8BgH/uH3ung=" crossorigin="anonymous">
+  <script src="static/markdownit-katex.js"></script>
+  
+  <script>
+  md = md.use(markdownitIncrementalDOM);
+  md = md.use(markdownitKaTeX);
   function status(text, color){
     document.getElementById("connstatus").innerHTML = text;
     document.getElementById("connstatus").style.color = color;
@@ -99,5 +106,6 @@
   }
   establishConnection();
   </script>
+
   <link href="https://fonts.googleapis.com/css?family=Noto+Sans|Noto+Serif" rel="stylesheet">
 </body>
