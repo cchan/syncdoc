@@ -22,7 +22,9 @@
   </style>
 </head>
 <body>
-  <div id="status">Welcome to SyncDoc! This is a collaborative editing tool written in Go by <a href="https://clive.io">Clive Chan</a>. <span id="connstatus" style="color: gray; font-weight: bold;">Loading...</span></div>
+  <div id="status">
+    Welcome to SyncDoc! This is a collaborative editing tool written in Go by <a href="https://clive.io">Clive Chan</a>.
+    Supports: <a href="https://katex.org/docs/supported.html">KaTeX (LaTeX subset)</a>, <a href="https://github.com/markdown-it/markdown-it">markdown-it</a> (<a href="http://spec.commonmark.org/">CommonMark</a> + <a href="https://help.github.com/articles/organizing-information-with-tables/">Tables</a> + <a href="https://help.github.com/articles/basic-writing-and-formatting-syntax/#styling-text">Strikethrough</a>). <span id="connstatus" style="color: gray; font-weight: bold;">Loading...</span></div>
   <div id="wrapper">
     <textarea id="editor">[[[content]]]</textarea>
     <div id="dragbar">&#10486;</div>
