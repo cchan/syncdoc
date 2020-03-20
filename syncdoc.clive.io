@@ -18,6 +18,8 @@ server {
 
     root /home/clive/code/syncdoc/static;
 
+    error_page 404 /404.html;
+
     location = / {
     }
     location /static/ {
