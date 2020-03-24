@@ -53,21 +53,33 @@
     document.getElementById("connstatus").style.color = color;
   }
   var dragging = false;
-  document.getElementById("dragbar").onmousedown = function(e) { dragging = true; };
-  document.getElementById("dragbar").onmouseup = function(e) { dragging = false; };
-  document.onmousemove = function(e) { if(dragging) {
-    var pct = (100*e.clientX/Math.max(
-      document.body.scrollWidth,
-      document.documentElement.scrollWidth,
-      document.body.offsetWidth,
-      document.documentElement.offsetWidth,
-      document.documentElement.clientWidth
-    ));
-    if (pct < 5) pct = 5;
-    if (pct > 95) pct = 95;
-    document.getElementsByClassName("CodeMirror")[0].style.width = (pct-0.5) + "%";
-    document.getElementById("target").style.width = (100-pct-0.5) + "%";
-  } };
+  function dragstart(e) { dragging = true; }
+  function dragend(e) { dragging = false; }
+  function dragmove(e) {
+    if(dragging) {
+      var x = e.clientX || e.touches[0].clientX;
+      var pct = (100*x/Math.max(
+        document.body.scrollWidth,
+        document.documentElement.scrollWidth,
+        document.body.offsetWidth,
+        document.documentElement.offsetWidth,
+        document.documentElement.clientWidth
+      ));
+      if (pct < 5) pct = 5;
+      if (pct > 95) pct = 95;
+      document.getElementsByClassName("CodeMirror")[0].style.width = (pct-0.5) + "%";
+      document.getElementById("target").style.width = (100-pct-0.5) + "%";
+    }
+  }
+
+  var dragbar = document.getElementById("dragbar");
+  dragbar.addEventListener("mousedown", dragstart, { passive: true });
+  dragbar.addEventListener("touchstart", dragstart, { passive: true });
+  dragbar.addEventListener("mouseup", dragend, { passive: true });
+  dragbar.addEventListener("touchend", dragend, { passive: true });
+  document.addEventListener("mousemove", dragmove, { passive: true });
+  document.addEventListener("touchmove", dragmove, { passive: true });
+
   function establishConnection(){
     status("Connecting...", "goldenrod");
     var socket = new WebSocket("wss://" + location.host + "/ws" + location.pathname);

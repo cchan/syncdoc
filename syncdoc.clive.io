@@ -23,6 +23,7 @@ server {
     location = / {
     }
     location /static/ {
+        root /home/clive/code/syncdoc/;
     }
 
     location /ws/ {
