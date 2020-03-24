@@ -57,7 +57,7 @@
   function dragend(e) { dragging = false; }
   function dragmove(e) {
     if(dragging) {
-      var x = e.clientX || e.touches[0].clientX;
+      var x = e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
       var pct = (100*x/Math.max(
         document.body.scrollWidth,
         document.documentElement.scrollWidth,
