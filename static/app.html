@@ -12,7 +12,7 @@
     .CodeMirror, #target{ height: 100%; width: 49.5%; }
     .CodeMirror{ float: left; font-size: 14pt; }
     #target{ float: right; word-wrap: break-word; font-size: 14pt; overflow-y: scroll; }
-    #dragbar{ cursor: col-resize; background-color: #ccc; color: #666; width: 1%; height: 100%; line-height: 100%; display: inline-block; float: left; display: flex; justify-content: center; align-items: center; }
+    #dragbar{ cursor: col-resize; background-color: #ccc; color: #666; width: 1%; height: 100%; line-height: 100%; display: inline-block; float: left; display: flex; justify-content: center; align-items: center; user-select: none; }
     @media print {
       #status, #wrapper>* { display: none; }
       #wrapper>#target { display: block; float: none; width: 100%; }
