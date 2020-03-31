@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/codemirror.min.css" integrity="sha256-vZ3SaLOjnKO/gGvcUWegySoDU6ff33CS5i9ot8J9Czk=" crossorigin="anonymous" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sindresorhus/github-markdown-css@4.0.0/github-markdown.css" integrity="sha256-cf0utJyD3jlnqw2/IdG9Ai3UyTLsW10Z8nXcCbHhfDI=" crossorigin="anonymous">
   <style>
-    html, body{ height: 100%; }
+    html, body{ height: 100%; background-color: #f9f9ea; }
     body{
       font-family: "Noto Sans", sans-serif;
       margin: 0;
@@ -17,22 +17,74 @@
     }
     #wrapper{ height: 100%; overflow: hidden; }
     .CodeMirror, #target{ height: 100%; width: 49.5%; }
-    .CodeMirror{ float: left; font-size: 14pt; }
+    .CodeMirror{ float: left; font-size: 14pt; background-color: #f9f9ea; }
     #target{ float: right; word-wrap: break-word; font-size: 14pt; overflow-y: scroll; box-sizing: border-box; padding: 1em; }
+
     #dragbar{ cursor: col-resize; background-color: #ccc; color: #666; width: 1%; height: 100%; line-height: 100%; display: inline-block; float: left; display: flex; justify-content: center; align-items: center; user-select: none; }
     @media print {
-      #status, #wrapper>* { display: none; }
+      #intro, #wrapper>* { display: none; }
       #wrapper>#target { display: block; float: none; width: 100%; }
       html,body,#wrapper,#target{ height: initial; overflow: initial; }
     }
     #editor { display: none; }
+    #connstatus{
+      color: gray;
+      font-weight: bold;
+      position: fixed;
+      left: 12.5%;
+      width: 25%;
+      text-align: center;
+      display: inline-block;
+      z-index: 10000;
+      top: 50%;
+      font-size: 2em;
+    }
+    #intro {
+      position: fixed;
+      width: 30%;
+      top: -10em;
+      left: 35%;
+      padding: 1em;
+      z-index: 20000;
+      box-sizing: border-box;
+      border: solid 0.3em tan;
+      background-color: beige;
+      border-radius: 1em;
+      transition: top 0.5s, opacity 0.5s;
+    }
+    #nub {
+      height: 5em;
+      position: fixed;
+      z-index: 30000;
+      width: 5em;
+      text-align: center;
+      left: 50%;
+      margin-left: -2.5em;
+      background-color: beige;
+      border: solid 0.3em tan;
+      border-radius: 5em;
+      font-size: 0.6em;
+      top: -10em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: top 0.5s;
+    }
+    #nub:hover {
+      top: -2.5em;
+    }
   </style>
 </head>
 <body>
-  <div id="status">
+  <div id="intro">
     Welcome to SyncDoc! This is a collaborative editing tool written in Go by <a href="https://clive.io">Clive Chan</a>.
-    Supports: <a href="https://katex.org/docs/supported.html">KaTeX (LaTeX subset)</a>, <a href="https://github.com/markdown-it/markdown-it">markdown-it</a> (<a href="http://spec.commonmark.org/">CommonMark</a> + <a href="https://help.github.com/articles/organizing-information-with-tables/">Tables</a> + <a href="https://help.github.com/articles/basic-writing-and-formatting-syntax/#styling-text">Strikethrough</a>). <span id="connstatus" style="color: gray; font-weight: bold;">Loading...</span></div>
+    Supports: <a href="https://katex.org/docs/supported.html">KaTeX (LaTeX subset)</a>, <a href="https://github.com/markdown-it/markdown-it">markdown-it</a> (<a href="http://spec.commonmark.org/">CommonMark</a> + <a href="https://help.github.com/articles/organizing-information-with-tables/">Tables</a> + <a href="https://help.github.com/articles/basic-writing-and-formatting-syntax/#styling-text">Strikethrough</a>). 
+    <div style="font-size: 0.5em; text-align: center; font-weight: bold; position: relative; top: 0.8em;">click outside this box to dismiss</div>
+  </div>
+  <div id="nub">
+    <span style="position:relative; top:2.7em;">syncdoc</span>
+  </div>
   <div id="wrapper">
+    <div id="connstatus">Loading...</div>
     <textarea id="editor">[[[content]]]</textarea>
     <div id="dragbar">&#10486;</div>
     <div id="target" class="markdown-body"></div>
@@ -58,6 +110,10 @@
   function status(text, color){
     document.getElementById("connstatus").innerHTML = text;
     document.getElementById("connstatus").style.color = color;
+    if(text == "")
+      document.getElementById("connstatus").style.display = "none";
+    else
+      document.getElementById("connstatus").style.display = "inline-block";
   }
   var dragging = false;
   function dragstart(e) { dragging = true; }
@@ -114,7 +170,7 @@
       cm.on("change", change);
       cm.display.input.blur();
       console.log("opened connection with server: ", event);
-      status("Connected", "green");
+      status("", "green");
     });
     socket.addEventListener('message', function(msg) {
       connected = true;
@@ -144,6 +200,21 @@
     });
   }
   establishConnection();
+  document.getElementById("nub").onclick = function(e){
+    document.getElementById("nub").style.top = "-10em";
+    document.getElementById("intro").style.top="5em";
+    document.getElementById("intro").style.opacity="1";
+    document.onclick = function(){
+      document.getElementById("nub").style.top = "-3em";
+      document.getElementById("intro").style.top="-10em";
+      document.getElementById("intro").style.opacity="0";
+      document.onclick = undefined;
+    };
+    if(e)
+      e.stopPropagation();
+  };
+  document.getElementById("intro").onclick = function(e){ e.stopPropagation(); };
+  setTimeout(document.getElementById("nub").onclick, 100);
   </script>
 
   <link href="https://fonts.googleapis.com/css?family=Noto+Sans|Noto+Serif" rel="stylesheet">
