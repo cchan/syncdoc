@@ -50,8 +50,10 @@
       border: solid 0.3em tan;
       background-color: beige;
       border-radius: 1em;
+      opacity: 0;
       transition: top 0.5s, opacity 0.5s;
     }
+    #intro.active { top: 5em; opacity: 1; }
     #nub {
       height: 5em;
       position: fixed;
@@ -67,11 +69,10 @@
       top: -10em;
       font-weight: bold;
       cursor: pointer;
-      transition: top 0.5s;
+      transition: top 0.33s;
     }
-    #nub:hover {
-      top: -2.5em;
-    }
+    #nub.active { top: -3em; }
+    #nub.active:hover { top: -2.7em; }
   </style>
 </head>
 <body>
@@ -205,21 +206,21 @@
     });
   }
   establishConnection();
-  document.getElementById("nub").onclick = function(e){
-    document.getElementById("nub").style.top = "-10em";
-    document.getElementById("intro").style.top="5em";
-    document.getElementById("intro").style.opacity="1";
+  var nub = document.getElementById("nub");
+  var intro = document.getElementById("intro");
+  nub.onclick = function(e){
+    nub.className="";
+    intro.className="active";
     document.onclick = function(){
-      document.getElementById("nub").style.top = "-3em";
-      document.getElementById("intro").style.top="-10em";
-      document.getElementById("intro").style.opacity="0";
+      nub.className="active";
+      intro.className="";
       document.onclick = undefined;
     };
     if(e)
       e.stopPropagation();
   };
-  document.getElementById("intro").onclick = function(e){ e.stopPropagation(); };
-  setTimeout(document.getElementById("nub").onclick, 100);
+  intro.onclick = function(e){ e.stopPropagation(); };
+  setTimeout(nub.onclick, 100);
   </script>
 
   <link href="https://fonts.googleapis.com/css?family=Noto+Sans|Noto+Serif" rel="stylesheet">
