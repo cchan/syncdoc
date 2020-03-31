@@ -18,7 +18,7 @@
     #wrapper{ height: 100%; overflow: hidden; }
     .CodeMirror, #target{ height: 100%; width: 49.5%; }
     .CodeMirror{ float: left; font-size: 14pt; }
-    #target{ float: right; word-wrap: break-word; font-size: 14pt; overflow-y: scroll; box-sizing: border-box; padding: 0 1em; }
+    #target{ float: right; word-wrap: break-word; font-size: 14pt; overflow-y: scroll; box-sizing: border-box; padding: 1em; }
     #dragbar{ cursor: col-resize; background-color: #ccc; color: #666; width: 1%; height: 100%; line-height: 100%; display: inline-block; float: left; display: flex; justify-content: center; align-items: center; user-select: none; }
     @media print {
       #status, #wrapper>* { display: none; }
@@ -87,10 +87,17 @@
   document.addEventListener("mousemove", dragmove, { passive: true });
   document.addEventListener("touchmove", dragmove, { passive: true });
 
+  var connected = false;
+  cm.getWrapperElement().style.backgroundColor="#666";
+  cm.getWrapperElement().style.opacity="40%";
+  cm.on("beforeChange", function(instance, changeObj){
+    if(!connected)
+      changeObj.cancel();
+  });
   function establishConnection(){
     status("Connecting...", "goldenrod");
     var socket = new WebSocket("wss://" + location.host + "/ws" + location.pathname);
-    cm.on("change", function(instance, changeObj){
+    function change(instance, changeObj){
       if(changeObj.origin != "remote"){
         socket.send(JSON.stringify({
           From:    {Line: changeObj.from.line, Ch: changeObj.from.ch},
@@ -102,12 +109,18 @@
         document.getElementById('target'),
         md.renderToIncrementalDOM(instance.getValue())
       );
-    });
+    }
     socket.addEventListener('open', function(event) {
+      cm.on("change", change);
+      cm.display.input.blur();
       console.log("opened connection with server: ", event);
       status("Connected", "green");
     });
     socket.addEventListener('message', function(msg) {
+      connected = true;
+      cm.getWrapperElement().style.backgroundColor="";
+      cm.getWrapperElement().style.opacity="";
+
       console.log("recv: ", msg.data);
       var versionedchange = JSON.parse(msg.data)
       var change = JSON.parse(msg.data);
@@ -119,6 +132,11 @@
       );
     });
     socket.addEventListener('close', function(event) {
+      connected = false;
+      cm.getWrapperElement().style.backgroundColor="#666";
+      cm.getWrapperElement().style.opacity="40%";
+      cm.display.input.blur();
+      cm.off("change", change);
       status("Disconnected, trying again in <span id='countdown'>3</span> seconds...", "red");
       setTimeout(function(){document.getElementById("countdown").innerText = "2";}, 1000);
       setTimeout(function(){document.getElementById("countdown").innerText = "1";}, 2000);
