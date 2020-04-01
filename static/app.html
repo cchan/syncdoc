@@ -2,12 +2,17 @@
 <html lang="en">
 <head>
   <title>SyncDoc</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/codemirror.min.js" integrity="sha256-dPTL2a+npIonoK5i0Tyes0txCMUWZBf8cfKRfACRotc=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.52.2/lib/codemirror.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/markdown-it@10.0.0/dist/markdown-it.min.js" integrity="sha256-YASERpEeN8gRNr/Fy4Km34WGFqIq1h6HkJMAQnVHlhk=" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.48.4/codemirror.min.css" integrity="sha256-vZ3SaLOjnKO/gGvcUWegySoDU6ff33CS5i9ot8J9Czk=" crossorigin="anonymous" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sindresorhus/github-markdown-css@4.0.0/github-markdown.css" integrity="sha256-cf0utJyD3jlnqw2/IdG9Ai3UyTLsW10Z8nXcCbHhfDI=" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.52.2/addon/mode/overlay.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.52.2/mode/markdown/markdown.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.52.2/mode/gfm/gfm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.52.2/mode/stex/stex.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.52.2/lib/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sindresorhus/github-markdown-css@4.0.0/github-markdown.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.52.2/theme/solarized.min.css">
   <style>
-    html, body{ height: 100%; background-color: #f9f9ea; }
+    html, body{ height: 100%; background-color: blanchedalmond; }
     body{
       font-family: "Noto Sans", sans-serif;
       margin: 0;
@@ -17,12 +22,18 @@
     }
     #wrapper{ height: 100%; overflow: hidden; }
     .CodeMirror, #target{ height: 100%; width: 49.5%; }
-    .CodeMirror{ float: left; font-size: 14pt; background-color: #f9f9ea; }
+    .CodeMirror{ float: left; font-size: 14pt; }
+
+    .CodeMirror { background-color: blanchedalmond; }
+    .CodeMirror-gutters { background-color: saddlebrown; }
+    .CodeMirror-linenumber { color: blanchedalmond; }
+
     #target{ float: right; word-wrap: break-word; font-size: 14pt; overflow-y: scroll; box-sizing: border-box; padding: 1em; }
 
-    #dragbar{ cursor: col-resize; background-color: #ccc; color: #666; width: 1%; height: 100%; line-height: 100%; display: inline-block; float: left; display: flex; justify-content: center; align-items: center; user-select: none; }
+    #dragbar{ cursor: col-resize; background-color: #999; color: #444; width: 1%; height: 100%; line-height: 100%; display: inline-block; float: left; display: flex; justify-content: center; align-items: center; user-select: none; }
     @media print {
-      #intro, #wrapper>* { display: none; }
+      html, body { background-color: white; }
+      #intro, #nub, #wrapper>* { display: none; }
       #wrapper>#target { display: block; float: none; width: 100%; }
       html,body,#wrapper,#target{ height: initial; overflow: initial; }
     }
@@ -48,7 +59,7 @@
       z-index: 20000;
       box-sizing: border-box;
       border: solid 0.3em tan;
-      background-color: beige;
+      background-color: blanchedalmond;
       border-radius: 1em;
       opacity: 0;
       transition: top 0.5s, opacity 0.5s;
@@ -62,7 +73,7 @@
       text-align: center;
       left: 50%;
       margin-left: -2.5em;
-      background-color: beige;
+      background-color: blanchedalmond;
       border: solid 0.3em tan;
       border-radius: 5em;
       font-size: 0.6em;
@@ -98,7 +109,9 @@
   <script>
   var cm = CodeMirror.fromTextArea(document.getElementById("editor"), {
     lineNumbers: true,
-    lineWrapping: true
+    lineWrapping: true,
+    mode: "gfm",
+    theme: "solarized"
   });
   var md = markdownit();
   document.getElementById('target').innerHTML = md.render(document.getElementById("editor").value);
