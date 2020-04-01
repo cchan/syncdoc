@@ -8,5 +8,5 @@ require (
 	github.com/gobwas/ws v1.0.3
 	github.com/json-iterator/go v1.1.9
 	github.com/valyala/fasthttp v1.9.0 // indirect
-	github.com/valyala/fasttemplate v1.1.0 // indirect
+	github.com/valyala/fasttemplate v1.1.0
 )
