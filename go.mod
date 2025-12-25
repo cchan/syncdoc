@@ -7,6 +7,6 @@ require (
 	github.com/gobwas/pool v0.2.0 // indirect
 	github.com/gobwas/ws v1.0.3
 	github.com/json-iterator/go v1.1.9
-	github.com/valyala/fasthttp v1.9.0 // indirect
 	github.com/valyala/fasttemplate v1.1.0
+	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
 )
