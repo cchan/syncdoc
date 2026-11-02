@@ -11,6 +11,7 @@ map $http_upgrade $connection_upgrade {
 server {
     listen 443 http2 ssl;
     listen [::]:443 http2 ssl;
+    listen 127.0.0.1:8080; # cloudflared
 
     server_name syncdoc.clive.io;
 
