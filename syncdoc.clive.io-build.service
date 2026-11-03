@@ -4,6 +4,7 @@ Description=Build syncdoc.clive.io (pulled in by syncdoc.clive.io.service on eve
 [Service]
 Type=oneshot
 User=www
-Environment=GOTOOLCHAIN=local GOPATH=/home/www/go GOFLAGS=-buildvcs=false
+# Builds only from vendor/ (deps committed in this repo); no network.
+Environment=GOTOOLCHAIN=local GOPATH=/home/www/go GOPROXY=off "GOFLAGS=-buildvcs=false -mod=vendor"
 WorkingDirectory=/home/www/go/src/github.com/cchan/syncdoc
 ExecStart=/usr/local/go1.27.3/bin/go build -o /home/www/bin/syncdoc ./server
