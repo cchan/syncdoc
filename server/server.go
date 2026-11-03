@@ -12,15 +12,52 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"sync"
 
 	"github.com/cchan/syncdoc/syncdoc"
 	"github.com/gobwas/ws"
 	"github.com/valyala/fasttemplate"
 )
 
-var documents = make(map[string]*syncdoc.Syncdoc)
+var (
+	documents   = make(map[string]*syncdoc.Syncdoc)
+	documentsMu sync.Mutex
+)
 
-// TODO: ADD RWMUTEX HERE - map is not concurrent write safe! but is read safe.
+// Limits so a flood of connections can't exhaust memory on the host.
+const (
+	maxOpenDocs    = 500
+	maxConnsPerDoc = 50
+)
+
+// acquireDocument returns the in-memory document, loading it if needed, and counts the caller as a user.
+func acquireDocument(name string) *syncdoc.Syncdoc {
+	documentsMu.Lock()
+	defer documentsMu.Unlock()
+	doc := documents[name]
+	if doc == nil {
+		if len(documents) >= maxOpenDocs {
+			return nil
+		}
+		doc = syncdoc.NewDocument(name)
+		documents[name] = doc
+	}
+	if doc.Users >= maxConnsPerDoc {
+		return nil
+	}
+	doc.Users++
+	return doc
+}
+
+// releaseDocument drops the document from memory once nobody is using it; its state is already on disk.
+func releaseDocument(name string, doc *syncdoc.Syncdoc) {
+	documentsMu.Lock()
+	defer documentsMu.Unlock()
+	doc.Users--
+	if doc.Users == 0 && documents[name] == doc {
+		delete(documents, name)
+	}
+}
 
 var validDocName = regexp.MustCompile("^[a-zA-Z0-9\\_\\-]+$")
 
@@ -63,11 +100,11 @@ func edit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if documents[docname] == nil {
-		documents[docname] = syncdoc.NewDocument(docname)
+	doc := acquireDocument(docname)
+	if doc == nil {
+		return
 	}
-	doc := documents[docname]
-
+	defer releaseDocument(docname, doc)
 	defer doc.RemoveConnection(c)
 	doc.AddAndListen(c)
 }

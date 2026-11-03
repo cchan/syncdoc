@@ -7,23 +7,32 @@ import (
 	"github.com/gobwas/ws/wsutil"
   "log"
   "io"
+  "net"
+  "time"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
+const (
+  MaxMessageBytes = 64 << 10
+  writeTimeout = 5 * time.Second
+)
+
 type Syncdoc struct {
   Name string
-  Connections []io.ReadWriter
+  Connections []net.Conn
   ConnectionsMutex sync.Mutex
   CurrentState *docState
+  Users int // guarded by the server's documents mutex
 }
 
-func (doc *Syncdoc) AddAndListen(c io.ReadWriter) {
+func (doc *Syncdoc) AddAndListen(c net.Conn) {
   stringified, err := json.Marshal(doc.CurrentState.GetInitializingChange())
   if err != nil {
     log.Println("encode initializing:", err)
     return
   }
+  c.SetWriteDeadline(time.Now().Add(writeTimeout))
   if err := wsutil.WriteServerMessage(c, ws.OpText, stringified); err != nil {
     log.Println("send initializing:", err)
     return
@@ -33,20 +42,33 @@ func (doc *Syncdoc) AddAndListen(c io.ReadWriter) {
   doc.Connections = append(doc.Connections, c)
   doc.ConnectionsMutex.Unlock()
 
+  // Read frame by frame so oversized messages are rejected before being buffered.
+  rd := wsutil.NewReader(c, ws.StateServerSide)
+  controlHandler := wsutil.ControlFrameHandler(c, ws.StateServerSide)
+  rd.OnIntermediate = controlHandler
   for {
-    message, op, err := wsutil.ReadClientData(c)
-    if err != nil || op != ws.OpText {
-      //log.Println("read:", err)
+    hdr, err := rd.NextFrame()
+    if err != nil {
       break
     }
-
-    //log.Printf("[%s] recv: %s\n", doc.Name, string(message))
-
+    if hdr.OpCode.IsControl() {
+      if err := controlHandler(hdr, rd); err != nil {
+        break
+      }
+      continue
+    }
+    if hdr.OpCode != ws.OpText || !hdr.Fin || hdr.Length > MaxMessageBytes {
+      break
+    }
+    message := make([]byte, hdr.Length)
+    if _, err := io.ReadFull(rd, message); err != nil {
+      break
+    }
     doc.Apply(message, c)
   }
 }
 
-func (doc *Syncdoc) RemoveConnection(c io.ReadWriter) {
+func (doc *Syncdoc) RemoveConnection(c net.Conn) {
   doc.ConnectionsMutex.Lock()
   for i := range doc.Connections {
     if doc.Connections[i] == c {
@@ -57,25 +79,30 @@ func (doc *Syncdoc) RemoveConnection(c io.ReadWriter) {
   doc.ConnectionsMutex.Unlock()
 }
 
-func (doc *Syncdoc) Apply(message []byte, currentconn io.ReadWriter){
+func (doc *Syncdoc) Apply(message []byte, currentconn net.Conn){
   var changeObj Change
   if err := json.Unmarshal(message, &changeObj); err != nil {
     log.Println("decode:", err)
-  } else {
-    doc.CurrentState.Apply(changeObj)
+    return
+  }
+  if err := doc.CurrentState.Apply(changeObj); err != nil {
+    log.Printf("[%s] rejected change: %v", doc.Name, err)
+    return
+  }
 
-    // What happens when RemoveConnection while doing this?
-    // Can I not have a lock here?
-    doc.ConnectionsMutex.Lock()
-    for _, otherconn := range doc.Connections {
-      if otherconn != currentconn {
-        if err := wsutil.WriteServerMessage(otherconn, ws.OpText, message); err != nil {
-          log.Println(err)
-        }
+  // A deadline per write so one stalled client can't block the others; a failed write
+  // closes that connection, which ends its read loop and removes it.
+  doc.ConnectionsMutex.Lock()
+  for _, otherconn := range doc.Connections {
+    if otherconn != currentconn {
+      otherconn.SetWriteDeadline(time.Now().Add(writeTimeout))
+      if err := wsutil.WriteServerMessage(otherconn, ws.OpText, message); err != nil {
+        log.Println(err)
+        otherconn.Close()
       }
     }
-    doc.ConnectionsMutex.Unlock()
   }
+  doc.ConnectionsMutex.Unlock()
 }
 
 func NewDocument(name string) *Syncdoc {
