@@ -1,0 +1,9 @@
+[Unit]
+Description=Build syncdoc.clive.io (pulled in by syncdoc.clive.io.service on every start)
+
+[Service]
+Type=oneshot
+User=www
+Environment=GOTOOLCHAIN=local GOPATH=/home/www/go GOFLAGS=-buildvcs=false
+WorkingDirectory=/home/www/go/src/github.com/cchan/syncdoc
+ExecStart=/usr/local/go1.27.3/bin/go build -o /home/www/bin/syncdoc ./server

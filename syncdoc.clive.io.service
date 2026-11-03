@@ -1,6 +1,7 @@
 [Unit]
 Description=syncdoc.clive.io service
-After=network.target
+After=network.target syncdoc.clive.io-build.service
+Requires=syncdoc.clive.io-build.service
 StartLimitIntervalSec=0
 
 [Service]
@@ -9,7 +10,7 @@ Restart=always
 RestartSec=1
 User=www
 Environment="PORT=3001"
-ExecStart=/usr/local/go/bin/go run /home/www/go/src/github.com/cchan/syncdoc/server/server.go
+ExecStart=/home/www/bin/syncdoc
 
 [Install]
 WantedBy=multi-user.target
